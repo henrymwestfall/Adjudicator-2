@@ -32,7 +32,7 @@ game_map = Game_Map(map_source)
 
 Currently, new units must be coded into `adjudicator.py`. Units must be instances of `unit.Unit`.
 The Unit constructor takes 2 arguments: `unit_type` and `territory`. `unit_type` must be `"A"` or `"F"`, representing an Army
-or a Fleet respectively. `territory` must be a `Territory` object. Use `Game_Map.get_territory_by_name` to get a territory object
+or a Fleet respectively. `territory` must be a `Territory` object. Use `game_map.Game_Map.get_territory_by_name` to get a territory object
 by it's name. Nationality is not yet implemented.
 
 Example:
