@@ -22,12 +22,13 @@ class Game_Map:
                     n_territory = Territory(n)
                     self.territories_by_name[n] = n_territory
                 else:
-                    territory = self.territories_by_name[n]
+                    n_territory = self.territories_by_name[n]
                 
                 self.game_map[territory].append(n_territory)
         
     def get_neighbors(self, territory):
-        pass
+        # get a list of the territory's neighbors
+        return self.game_map[territory]
 
     def connected(self, territory_a, territory_b):
         # check if two territories are connected
@@ -35,5 +36,12 @@ class Game_Map:
         return territory_b in self.game_map[territory_a]
 
     def get_order_at(self, territory):
-        pass
+        # get the order of the unit at passed territory (may return None)
+        if territory.unit == None:
+            return None
+        else:
+            return territory.unit.order
+
+    def get_territory_by_name(self, name):
+        return self.territories_by_name[name]
 

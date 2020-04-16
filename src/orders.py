@@ -7,7 +7,8 @@ class Order:
     def __init__(self, game_map, unit):
         self.game_map = game_map
         self.unit = unit
-        self.location = self.unit.location
+        self.unit.order = self
+        self.territory = self.unit.territory
         self.nationality = self.unit.nationality
         self.dependencies = []
 
@@ -18,7 +19,7 @@ class Order:
         return orders
 
     def get_adjacent_orders(self):
-        adjacent_orders = list(filter(lambda order: order != None, [self.game_map.get_order_at(location) for location in self.game_map.get_neighbors(self.location)]))
+        adjacent_orders = list(filter(lambda order: order != None, [self.game_map.get_order_at(territory) for territory in self.game_map.get_neighbors(self.territory)]))
         return adjacent_orders
 
     def resolve(self):
@@ -30,9 +31,9 @@ class Order:
             else:
                 # TODO: handle circular occurences (fleet paradox, triple swaps, etc.)
                 if isinstance(self, Hold_Order) and isinstance(dep, Move_Order):
-                    self.location.resolve_conflict()
+                    self.territory.resolve_conflict()
                 elif isinstance(self, Move_Order) and isinstance(dep, Hold_Order):
-                    dep.location.resolve_conflict()
+                    dep.territory.resolve_conflict()
 
     
     def handle_success(self):
@@ -45,16 +46,31 @@ class Order:
 class Hold_Order(Order):
     def __init__(self, game_map, unit):
         Order.__init__(self, game_map, unit)
-        self.location.add_claim(self)
+        self.territory.add_claim(self)
         self.strength = 1
 
     def get_dependencies(self, orders):
-        # returns the move orders and support hold orders directed at this location\
+        # returns the move orders and support hold orders directed at this territory
         # TODO: make this function look more like Move_Order.get_dependencies
-        move_orders = list(filter(lambda order: isinstance(order, Move_Order)))
-        support_orders = list(filter(lambda order: isinstance(order, Support_Hold_Order)))
-        dependent_orders = list(filter(lambda order: order.target == self.location) for order in move_orders + support_orders)
+        move_orders = list(filter(lambda order: isinstance(order, Move_Order), orders))
+        support_orders = list(filter(lambda order: isinstance(order, Support_Hold_Order), orders))
+        dependent_orders = list(filter(lambda order: order.target == self.territory, move_orders + support_orders))
         return dependent_orders
+
+    def resolve(self):
+        # determine dependencies
+        adjacent_orders = self.get_adjacent_orders()
+        self.dependencies = self.get_dependencies(adjacent_orders)
+
+        super().resolve()
+
+        if self.succeeded:
+            self.handle_success()
+        else:
+            self.handle_failure()
+
+    def handle_success(self):
+        print(f"Unit at {self.territory.name} successfully held!")
 
 
 class Move_Order(Order):
@@ -67,15 +83,15 @@ class Move_Order(Order):
 
     def get_dependencies(self, orders):
         # returns the move orders whose targets match self.target
-        # and any orders whose locations match self.target
+        # and any orders whose territorys match self.target
         def is_relevant(order):
             if isinstance(order, Move_Order):
                 if order.target == self.target:
                     return True
             elif isinstance(order, Support_Move_Order):
-                if order.move_target == self.target and order.move_origin == self.location:
+                if order.move_target == self.target and order.move_origin == self.territory:
                     return True
-            elif order.location == self.target:
+            elif order.territory == self.target:
                 return True
             return False
         dependencies = [order for order in orders if is_relevant(order)]
@@ -91,7 +107,16 @@ class Move_Order(Order):
         # resolve recursively
         super().resolve()
 
-        # this is a move order
+        if self.succeeded:
+            self.handle_success()
+        else:
+            self.handle_failure()
+    
+    def handle_success(self):
+        print(f"Unit at {self.territory.name} successfully moved to {self.target.name}!")
+    
+    def handle_failure(self):
+        print(f"Unit at {self.territory.name} failed to move to {self.target.name}!")
 
 
 class Support_Order(Order): # should not be directly instanced
@@ -99,13 +124,13 @@ class Support_Order(Order): # should not be directly instanced
         Order.__init__(self, game_map, unit)
 
     def get_dependencies(self, orders):
-        # return move orders whose targets match self.location
+        # return move orders whose targets match self.territory
         def is_relevant(order):
             if isinstance(order, Move_Order):
-                if (order.target == self.location):
+                if (order.target == self.territory):
                     return True
             return False
-        dependencies = [order for order in orders is is_relevant(order)]
+        dependencies = [order for order in orders if is_relevant(order)]
         return dependencies
 
     def resolve(self):
@@ -141,7 +166,11 @@ class Support_Hold_Order(Support_Order):
             self.succeeded = False
 
     def handle_success(self):
+        print(f"Unit at {self.territory.name} successfully support-held the unit in {self.target.name}")
         self.hold_order.strength += 1
+
+    def handle_failure(self):
+        print(f"Unit at {self.territory.name} could not support-hold the unit in {self.target.name}")
 
 
 class Support_Move_Order(Support_Order):
@@ -156,7 +185,11 @@ class Support_Move_Order(Support_Order):
             
 
     def handle_success(self):
+        print(f"Unit in {self.territory.name} successfully support-moved the unit in {self.move_origin.name} to {self.move_target.name}!")
         self.move_order.strength += 1
+
+    def handle_failure(self):
+        print(f"Unit in {self.territory.name} could not support-move the unit in {self.move_origin.name} to {self.move_target.name}!")
 
 
 class Convoy_Order(Order):
