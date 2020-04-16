@@ -128,6 +128,7 @@ class Support_Order(Order): # should not be directly instanced
             self.handle_success()
         else:
             self.handle_failure()
+        self.state = RESOLVED
 
 
 class Support_Hold_Order(Support_Order):
