@@ -13,4 +13,4 @@ class Unit:
 
     def dislodge(self):
         # TODO: dislodgement
-        print("Oh no! I've been dislodged!")
+        pass

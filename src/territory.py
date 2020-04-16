@@ -1,4 +1,4 @@
-from orders import Hold_Order, Move_Order
+from orders import Hold_Order, Move_Order, RESOLVED
 
 
 class Territory:
@@ -12,6 +12,9 @@ class Territory:
         self.hsc = False # home supply center
         self.terrain = "land"
 
+    def __str__(self):
+        return self.name
+
     def add_claim(self, order):
         self.claims.append(order)
 
@@ -19,30 +22,23 @@ class Territory:
         # find strongest claim
         claim_strengths = [claim.strength for claim in self.claims]
         strongest_strength = max(claim_strengths)
-        strongest = claim_strengths[claim_strengths.index(strongest_strength)]
+        strongest = self.claims[claim_strengths.index(strongest_strength)]
 
         # check for challengers
-        unchallenged = True
-        for strength in claim_strengths:
-            # check for a tie
-            if strength == strongest_strength:
-                unchallenged = False
-                break
+        unchallenged = claim_strengths.count(strongest_strength) == 1
         
         # if unchallenged, the strongest claim wins
         # else, there is a standoff and nothing changes
         # TODO: add nationality exceptions (i.e. France cannot dislodge or help dislodge a French unit)
         if unchallenged:
-            strongest.succeeds = True
+            strongest.succeeded = True
             for claim in self.claims:
                 if not claim is strongest:
-                    claim.succeeds = False
-
-            # if the strongest was a move order, dislodge the holding unit (if any) and replace
-            # with the strongest unit
-            if isinstance(strongest, Move_Order) and self.unit != None:
-                self.unit.dislodge()
-                strongest.unit.move_to(self)
+                    claim.succeeded = False
         else:
             for claim in self.claims:
-                claim.succeeds = False
+                if isinstance(claim, Hold_Order):
+                    claim.succeeded = True
+                else:
+                    claim.succeeded = False
+                claim.state = RESOLVED
