@@ -115,7 +115,7 @@ class Move_Order(Order):
         # and any orders whose territorys match self.target
         def is_relevant(order):
             if isinstance(order, Move_Order):
-                if order.target == self.target:
+                if order.target == self.target or order.territory == self.target:
                     return True
             elif isinstance(order, Support_Move_Order):
                 if order.move_target == self.target and order.move_origin == self.territory:
@@ -149,7 +149,7 @@ class Move_Order(Order):
         print("\t"*debug_tabs+f"Unit at {self.territory.name} failed to move to {self.target.name}!")
 
 
-class Support_Order(Order): # should not be directly instanced
+class Support_Order(Order): # abstract
     def __init__(self, game_map, unit):
         Order.__init__(self, game_map, unit)
 

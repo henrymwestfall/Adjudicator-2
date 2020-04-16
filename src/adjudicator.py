@@ -44,7 +44,7 @@ orders = [
 root = orders[0]
 
 
-# resolve everything (finger's crossed)
+# resolve everything
 root.resolve(0)
 
 print("\n\nSummary")
