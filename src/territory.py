@@ -1,11 +1,16 @@
 from orders import Hold_Order, Move_Order
 
+
 class Territory:
     def __init__(self, name, neighbors=list()):
         self.name = name
         self.neighbors = neighbors
         self.claims = []
         self.unit = None
+
+        self.sc = False # supply center
+        self.hsc = False # home supply center
+        self.terrain = "land"
 
     def add_claim(self, order):
         self.claims.append(order)
