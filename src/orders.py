@@ -71,10 +71,13 @@ class Hold_Order(Order):
     def get_dependencies(self, orders):
         # returns the move orders and support hold orders directed at this territory
         # TODO: make this function look more like Move_Order.get_dependencies
-        move_orders = list(filter(lambda order: isinstance(order, Move_Order), orders))
-        support_orders = list(filter(lambda order: isinstance(order, Support_Hold_Order), orders))
-        dependent_orders = list(filter(lambda order: order.target == self.territory, move_orders + support_orders))
-        return dependent_orders
+        def is_relevant(order):
+            if isinstance(order, Move_Order) or isinstance(order, Support_Hold_Order):
+                if order.target == self.territory:
+                    return True
+            return False
+        dependencies = [order for order in orders if is_relevant(order)]
+        return dependencies
 
     def resolve(self, debug_tabs):
         # determine dependencies
